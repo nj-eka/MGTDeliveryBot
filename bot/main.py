@@ -2,7 +2,7 @@ import telebot as tb
 from telebot import types
 import asyncio
 
-bot = tb.TeleBot("5637186029:AAG1-PraSyrto_k24WRWInZ7BoT-RvUU5DQ", parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
+bot = tb.TeleBot("", parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
 
 courier_users = {}
 
