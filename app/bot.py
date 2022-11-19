@@ -1,9 +1,11 @@
+import os
 import telebot as tb
 from telebot import types
 import asyncio
 
-bot = tb.TeleBot("", parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
+bot = tb.TeleBot(os.environ.get("TBOT_TOKEN"), parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
 
+#todo: remove to redis
 courier_users = {}
 
 new_courier = {
@@ -11,6 +13,8 @@ new_courier = {
     'Номер телефона': None,
     'Маршруты': []
 }
+
+# handlers
 
 @bot.message_handler(func=lambda msg: 'start' in msg.text or 'Назад' in msg.text)
 def send_welcome(message):
@@ -25,10 +29,10 @@ def send_welcome(message):
                 if key != 'Маршруты':
                     itembtn2 = types.KeyboardButton('✅ Режим курьера')
         markup.add(itembtn1, itembtn2)
-    else:        
+    else:
         itembtn2 = types.KeyboardButton('❌ Режим курьера')
         markup.add(itembtn1, itembtn2)
-    bot.reply_to(message, "Добро пожаловать в сервис по нахождению посылок! Выберите, пожалуйста, желаемое действие из представленного ниже меню:", reply_markup=markup)
+    bot.reply_to(message, "Добро пожаловать в сервис по отправке посылок!", reply_markup=markup)
 
 @bot.message_handler(func=lambda msg: 'Режим курьера' in msg.text or 'Вернуться' in msg.text)
 def courier_mode(message):
@@ -125,7 +129,7 @@ def add_name(message):
     if courier_users[message.from_user.id]['ФИО'] != None:
         itembtn = types.KeyboardButton('⬅️ Вернуться')
         markup.add(itembtn)
-        bot.reply_to(message, "Отправьте, пожалуйста, свои Ф.И.О в виде: ФИО: ___ ___ ___", reply_markup=markup)  
+        bot.reply_to(message, "Отправьте, пожалуйста, свои Ф.И.О в виде: ФИО: ___ ___ ___", reply_markup=markup)
     else:
         itembtn = types.KeyboardButton('⬅️ Вернуться')
         markup.add(itembtn)
@@ -140,5 +144,3 @@ def send_shipment(message):
 def function_name(message):
     print(message.location)
     bot.reply_to(message, 'Thank you!')
-
-bot.infinity_polling()
