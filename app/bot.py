@@ -5,10 +5,13 @@ from telebot import types
 import asyncio
 import logging
 
-from app.keyboards import generate_calendar_days, generate_calendar_months, EMTPY_FIELD
-from app.filters import calendar_factory, calendar_zoom, bind_filters
+from keyboards import generate_calendar_days, generate_calendar_months, EMTPY_FIELD
+from filters import calendar_factory, calendar_zoom, bind_filters
 
-bot = tb.TeleBot(os.environ.get("TG_BOT_TOKEN"), parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
+bot = tb.TeleBot("5637186029:AAEUYNg2QFbDNMD67RzgENDiZm-KjzXZ48w", parse_mode=None)
+# bot = tb.TeleBot(os.environ.get("TBOT_TOKEN"), parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
+
+users = {}
 
 #todo: remove to redis
 courier_users = {}
@@ -16,13 +19,27 @@ courier_users = {}
 new_courier = {
     'ФИО': None,
     'Номер телефона': None,
-    'Маршруты': []
+    'Маршруты': [[[55.702999, 37.530874], [55.751426, 37.618879]], [[55.704907, 37.640378], [55.819721, 37.611704]]]
 }
+
+#
 
 # handlers
 
 @bot.message_handler(func=lambda msg: 'start' in msg.text or 'Назад' in msg.text)
 def send_welcome(message):
+    if message.from_user.id not in users:
+        users[message.from_user.id] = {}
+        if 'username' in users[message.from_user.id]:
+            users[message.from_user.id]['username'] = users[message.from_user.id]['username']
+        else:
+            users[message.from_user.id]['username'] = message.from_user.username
+        if 'iscourier' in  users[message.from_user.id]:
+            users[message.from_user.id]['iscourier'] = users[message.from_user.id]['iscourier']
+        else:
+            users[message.from_user.id]['iscourier'] = False
+    else:
+        users[message.from_user.id] = users[message.from_user.id]
     markup = types.ReplyKeyboardRemove(selective=False)
     markup = types.ReplyKeyboardMarkup(row_width=2)
     itembtn1 = types.KeyboardButton('📪 Отправить посылку')
@@ -140,10 +157,27 @@ def add_name(message):
         markup.add(itembtn)
         bot.reply_to(message, "Если вы хотите изменить свои Ф.И.О, отправьте их, пожалуйста, в виде: \"ФИО: ___ ___ ___\"", reply_markup=markup)
 
+@bot.message_handler(func=lambda msg: 'Маршруты' in msg.text)
+def getNumber(message):
+    markup = types.ReplyKeyboardRemove(selective=False)
+    x = 1
+    for key in courier_users[message.from_user.id]['Маршруты']:
+        bot.send_message(message.chat.id, 'Маршрут ' + str(x))
+        for i in range(len(key)):
+            bot.send_location(message.chat.id, key[i][0], key[i][1])
+        x+=1
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    itembtn1 = types.KeyboardButton('Маршрут 1')
+    itembtn2 = types.KeyboardButton('Маршрут 2')
+    itembtn3 = types.KeyboardButton('⬅️ Вернуться')
+    markup.add(itembtn1, itembtn2, itembtn3)
+    bot.reply_to(message, "Вы хотите изменить свои маршруты?", reply_markup=markup)
+
+
 @bot.message_handler(func=lambda msg: 'Отправить посылку' in msg.text)
 def send_shipment(message):
     markup = types.ReplyKeyboardRemove(selective=False)
-    bot.reply_to(message, "Сейчас отправим вашу посылку!", reply_markup=markup)
+    
 
 @bot.message_handler(content_types=["location"])
 def function_name(message):
@@ -181,3 +215,5 @@ def calendar_zoom_out_handler(call: types.CallbackQuery):
 @bot.callback_query_handler(func=lambda call: call.data == EMTPY_FIELD)
 def callback_empty_field_handler(call: types.CallbackQuery):
     bot.answer_callback_query(call.id)
+
+bot.infinity_polling()
