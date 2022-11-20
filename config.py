@@ -1,7 +1,7 @@
 import argparse
 import os
 
-LOGGING_DIR = os.environ.get('tbot_log_dir', 'log')
+LOGGING_DIR = os.environ.get('TG_BOT_LOG', '.')
 LOG_FORMATTER = '[%(asctime)s] %(levelname)8s - %(message)s (%(filename)s:%(lineno)s)'
 
 def parse_input_args():

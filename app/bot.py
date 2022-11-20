@@ -8,7 +8,7 @@ import logging
 from app.keyboards import generate_calendar_days, generate_calendar_months, EMTPY_FIELD
 from app.filters import calendar_factory, calendar_zoom, bind_filters
 
-bot = tb.TeleBot(os.environ.get("TBOT_TOKEN"), parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
+bot = tb.TeleBot(os.environ.get("TG_BOT_TOKEN"), parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
 
 #todo: remove to redis
 courier_users = {}
