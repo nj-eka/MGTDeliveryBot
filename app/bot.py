@@ -1,9 +1,16 @@
+import os
+from datetime import date
 import telebot as tb
 from telebot import types
 import asyncio
+import logging
 
-bot = tb.TeleBot("", parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
+from app.keyboards import generate_calendar_days, generate_calendar_months, EMTPY_FIELD
+from app.filters import calendar_factory, calendar_zoom, bind_filters
 
+bot = tb.TeleBot(os.environ.get("TBOT_TOKEN"), parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
+
+#todo: remove to redis
 courier_users = {}
 
 new_courier = {
@@ -11,6 +18,8 @@ new_courier = {
     'Номер телефона': None,
     'Маршруты': []
 }
+
+# handlers
 
 @bot.message_handler(func=lambda msg: 'start' in msg.text or 'Назад' in msg.text)
 def send_welcome(message):
@@ -25,10 +34,10 @@ def send_welcome(message):
                 if key != 'Маршруты':
                     itembtn2 = types.KeyboardButton('✅ Режим курьера')
         markup.add(itembtn1, itembtn2)
-    else:        
+    else:
         itembtn2 = types.KeyboardButton('❌ Режим курьера')
         markup.add(itembtn1, itembtn2)
-    bot.reply_to(message, "Добро пожаловать в сервис по нахождению посылок! Выберите, пожалуйста, желаемое действие из представленного ниже меню:", reply_markup=markup)
+    bot.reply_to(message, "Добро пожаловать в сервис по отправке посылок!", reply_markup=markup)
 
 @bot.message_handler(func=lambda msg: 'Режим курьера' in msg.text or 'Вернуться' in msg.text)
 def courier_mode(message):
@@ -125,7 +134,7 @@ def add_name(message):
     if courier_users[message.from_user.id]['ФИО'] != None:
         itembtn = types.KeyboardButton('⬅️ Вернуться')
         markup.add(itembtn)
-        bot.reply_to(message, "Отправьте, пожалуйста, свои Ф.И.О в виде: ФИО: ___ ___ ___", reply_markup=markup)  
+        bot.reply_to(message, "Отправьте, пожалуйста, свои Ф.И.О в виде: ФИО: ___ ___ ___", reply_markup=markup)
     else:
         itembtn = types.KeyboardButton('⬅️ Вернуться')
         markup.add(itembtn)
@@ -141,4 +150,34 @@ def function_name(message):
     print(message.location)
     bot.reply_to(message, 'Thank you!')
 
-bot.infinity_polling()
+
+# calendar
+
+@bot.message_handler(commands='calendar')
+def calendar_command_handler(message: types.Message):
+    now = date.today()
+    bot.send_message(message.chat.id, 'Calendar', reply_markup=generate_calendar_days(year=now.year, month=now.month))
+
+
+@bot.callback_query_handler(func=None, calendar_config=calendar_factory.filter())
+def calendar_action_handler(call: types.CallbackQuery):
+    callback_data: dict = calendar_factory.parse(callback_data=call.data)
+    year, month = int(callback_data['year']), int(callback_data['month'])
+    logging.ingo('calandar: %n, %n', year, month)
+
+    bot.edit_message_reply_markup(call.message.chat.id, call.message.id,
+                                  reply_markup=generate_calendar_days(year=year, month=month))
+
+
+@bot.callback_query_handler(func=None, calendar_zoom_config=calendar_zoom.filter())
+def calendar_zoom_out_handler(call: types.CallbackQuery):
+    callback_data: dict = calendar_zoom.parse(callback_data=call.data)
+    year = int(callback_data.get('year'))
+
+    bot.edit_message_reply_markup(call.message.chat.id, call.message.id,
+                                  reply_markup=generate_calendar_months(year=year))
+
+
+@bot.callback_query_handler(func=lambda call: call.data == EMTPY_FIELD)
+def callback_empty_field_handler(call: types.CallbackQuery):
+    bot.answer_callback_query(call.id)

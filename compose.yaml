@@ -1,0 +1,14 @@
+services:
+  mgt:
+    build: .
+    restart: always
+    tty: true
+    user: 1000:1000
+    # env_file: 
+    #   - ./config/.env.${PROD}
+    environment:
+      TG_API_ID: ${TG_API_ID:?err}
+      TG_API_HASH: ${TG_API_HASH:?err}
+      TG_BOT_TOKEN: ${TG_BOT_TOKEN:?err}
+      TBOT_TOKEN: ${TG_BOT_TOKEN:?err}
+
