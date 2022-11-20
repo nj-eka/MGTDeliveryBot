@@ -5,4 +5,7 @@ WORKDIR /home/node/app
 COPY requirements.txt requirements.txt
 RUN python3 -m pip install -U --no-cache-dir -r requirements.txt
 COPY . .
+RUN mkdir -p 'log'
+ENV TZ='Europe/Moscow'
+ENV TG_BOT_LOG='/home/node/app/log'
 CMD [ "python3", "main.py"]
